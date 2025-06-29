@@ -187,6 +187,6 @@ If you have any questions or need help:
 
 ---
 
-**Made with ❤️ and 🎵 by [Your Name]**
+**Made with ❤️ and 🎵 by Suraj**
 
 *This project is not affiliated with Spotify Inc.* 
