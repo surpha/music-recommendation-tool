@@ -1,413 +1,265 @@
-/* Spotify-inspired styles for Music Recommendation Tool */
+/* Music Recommendation Tool - Custom Styles */
 
 :root {
-    --spotify-black: #121212;
-    --spotify-dark-gray: #181818;
-    --spotify-light-gray: #282828;
     --spotify-green: #1DB954;
-    --spotify-green-hover: #1ed760;
-    --spotify-white: #FFFFFF;
-    --spotify-text-primary: #FFFFFF;
-    --spotify-text-secondary: #B3B3B3;
-    --spotify-text-muted: #727272;
-    --spotify-border: #404040;
+    --spotify-dark: #191414;
+    --spotify-light: #282828;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B3B3B3;
+    --text-muted: #727272;
+    --border-color: #404040;
+    --card-bg: #282828;
+    --body-bg: #121212;
 }
 
 body {
-    background: var(--spotify-black);
-    min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    color: var(--spotify-text-primary);
+    background-color: var(--body-bg);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.container-fluid {
-    background: var(--spotify-black);
-    min-height: 100vh;
+/* Navigation */
+.navbar {
+    background: linear-gradient(135deg, var(--spotify-dark) 0%, var(--spotify-light) 100%) !important;
+    border-bottom: 1px solid var(--border-color);
 }
 
-/* Header styles */
-header {
-    background: var(--spotify-dark-gray) !important;
-    border-bottom: 1px solid var(--spotify-border);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+.navbar-brand {
+    font-weight: bold;
+    color: var(--spotify-green) !important;
 }
 
-.display-4 {
-    font-weight: 700;
-    color: var(--spotify-text-primary);
+.nav-link {
+    color: var(--text-secondary) !important;
+    transition: color 0.3s ease;
 }
 
-.lead {
-    color: var(--spotify-text-secondary);
+.nav-link:hover,
+.nav-link.active {
+    color: var(--spotify-green) !important;
 }
 
-/* Card styles */
+/* Cards */
 .card {
-    background: var(--spotify-light-gray);
-    border: 1px solid var(--spotify-border);
-    border-radius: 8px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
 }
 
-.card-header {
-    background: var(--spotify-dark-gray) !important;
-    border-bottom: 1px solid var(--spotify-border);
-    border-radius: 8px 8px 0 0 !important;
+.card-title {
+    color: var(--text-primary);
     font-weight: 600;
-    color: var(--spotify-text-primary);
 }
 
-.card-body {
-    background: var(--spotify-light-gray);
-    color: var(--spotify-text-primary);
+.card-text {
+    color: var(--text-secondary);
 }
 
-/* Track card styles */
-.track-card {
-    background: var(--spotify-dark-gray);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid var(--spotify-border);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.track-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    background: var(--spotify-green);
-    transform: scaleY(0);
-    transition: transform 0.3s ease;
-}
-
-.track-card:hover::before {
-    transform: scaleY(1);
-}
-
-.track-card:hover {
-    transform: translateX(5px);
-    background: var(--spotify-light-gray);
-    border-color: var(--spotify-green);
-}
-
-.track-card.selected {
-    background: var(--spotify-light-gray);
-    border-color: var(--spotify-green);
-}
-
-.track-card.selected::before {
-    transform: scaleY(1);
-}
-
-.track-card.recommendation {
-    background: var(--spotify-dark-gray);
-    border-color: var(--spotify-green);
-}
-
-.track-card.recommendation::before {
-    background: var(--spotify-green);
-    transform: scaleY(1);
-}
-
-/* Button styles */
-.btn {
-    border-radius: 20px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-    border: none;
-    padding: 10px 20px;
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
-.btn-primary {
-    background: var(--spotify-green);
-    color: var(--spotify-black);
-}
-
-.btn-primary:hover {
-    background: var(--spotify-green-hover);
-    color: var(--spotify-black);
-}
-
+/* Buttons */
 .btn-success {
-    background: var(--spotify-green);
-    color: var(--spotify-black);
+    background-color: var(--spotify-green);
+    border-color: var(--spotify-green);
+    color: white;
+    font-weight: 600;
+    border-radius: 25px;
+    padding: 10px 20px;
+    transition: all 0.3s ease;
 }
 
 .btn-success:hover {
-    background: var(--spotify-green-hover);
-    color: var(--spotify-black);
+    background-color: #1ed760;
+    border-color: #1ed760;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(29, 185, 84, 0.3);
 }
 
-.btn-warning {
-    background: #FFD700;
-    color: var(--spotify-black);
-}
-
-.btn-warning:hover {
-    background: #FFED4E;
-    color: var(--spotify-black);
-}
-
-.btn-outline-secondary {
-    border-color: var(--spotify-border);
-    color: var(--spotify-text-secondary);
-}
-
-.btn-outline-secondary:hover {
-    background: var(--spotify-border);
-    color: var(--spotify-text-primary);
-}
-
-/* Form controls */
-.form-control, .form-select {
-    background: var(--spotify-dark-gray);
-    border: 1px solid var(--spotify-border);
-    border-radius: 20px;
-    color: var(--spotify-text-primary);
-    transition: all 0.3s ease;
-}
-
-.form-control:focus, .form-select:focus {
-    background: var(--spotify-dark-gray);
-    border-color: var(--spotify-green);
-    box-shadow: 0 0 0 0.2rem rgba(29, 185, 84, 0.25);
-    color: var(--spotify-text-primary);
-}
-
-.form-control::placeholder {
-    color: var(--spotify-text-muted);
-}
-
-/* Feature bars */
-.feature-bar {
-    background: var(--spotify-dark-gray);
-    border-radius: 10px;
-    height: 20px;
-    overflow: hidden;
-    margin: 5px 0;
-    border: 1px solid var(--spotify-border);
-}
-
-.feature-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--spotify-green) 0%, #1ed760 100%);
-    border-radius: 10px;
-    transition: width 0.5s ease;
-}
-
-.feature-fill.high {
-    background: linear-gradient(90deg, var(--spotify-green) 0%, #1ed760 100%);
-}
-
-.feature-fill.medium {
-    background: linear-gradient(90deg, #FFD700 0%, #FFED4E 100%);
-}
-
-.feature-fill.low {
-    background: linear-gradient(90deg, #FF6B6B 0%, #FF8E8E 100%);
-}
-
-/* Similarity score badges */
-.similarity-badge {
-    font-size: 0.8rem;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-weight: 600;
-}
-
-.similarity-excellent {
-    background: var(--spotify-green);
-    color: var(--spotify-black);
-}
-
-.similarity-good {
-    background: #17a2b8;
-    color: var(--spotify-white);
-}
-
-.similarity-moderate {
-    background: #FFD700;
-    color: var(--spotify-black);
-}
-
-.similarity-weak {
-    background: #FF6B6B;
-    color: var(--spotify-white);
-}
-
-/* Loading animation */
-.spinner-border {
-    width: 3rem;
-    height: 3rem;
+.btn-outline-success {
     color: var(--spotify-green);
+    border-color: var(--spotify-green);
+    border-radius: 20px;
 }
 
-/* Progress bars */
-.progress {
-    height: 25px;
-    border-radius: 15px;
-    background: var(--spotify-dark-gray);
-    border: 1px solid var(--spotify-border);
+.btn-outline-success:hover {
+    background-color: var(--spotify-green);
+    border-color: var(--spotify-green);
 }
 
-.progress-bar {
-    border-radius: 15px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    background: var(--spotify-green);
+.btn-outline-primary {
+    color: #007bff;
+    border-color: #007bff;
+    border-radius: 20px;
 }
 
-/* Audio player */
-.audio-player {
-    width: 100%;
-    border-radius: 25px;
-    background: var(--spotify-dark-gray);
-    border: 1px solid var(--spotify-border);
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
 }
 
-/* Alert styles */
-.alert {
-    background: var(--spotify-light-gray);
-    border: 1px solid var(--spotify-border);
-    color: var(--spotify-text-primary);
+/* Form Controls */
+.form-control {
+    background-color: var(--spotify-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
     border-radius: 8px;
 }
 
-.alert-info {
-    background: rgba(29, 185, 84, 0.1);
+.form-control:focus {
+    background-color: var(--spotify-light);
     border-color: var(--spotify-green);
-    color: var(--spotify-text-primary);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(29, 185, 84, 0.25);
 }
 
-.alert-warning {
-    background: rgba(255, 215, 0, 0.1);
-    border-color: #FFD700;
-    color: var(--spotify-text-primary);
+.form-select {
+    background-color: var(--spotify-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: 8px;
 }
 
-.alert-danger {
-    background: rgba(255, 107, 107, 0.1);
-    border-color: #FF6B6B;
-    color: var(--spotify-text-primary);
+.form-select:focus {
+    background-color: var(--spotify-light);
+    border-color: var(--spotify-green);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(29, 185, 84, 0.25);
 }
 
-/* Badge styles */
+.form-text {
+    color: var(--text-muted);
+}
+
+/* Album Covers */
+.album-cover {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    object-fit: cover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Song Cards */
+.song-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.song-card:hover {
+    border-color: var(--spotify-green);
+    transform: translateY(-2px);
+}
+
+.song-card.selected {
+    border-color: var(--spotify-green);
+    background-color: rgba(29, 185, 84, 0.1);
+}
+
+.recommendation-card {
+    border-left: 4px solid var(--spotify-green);
+}
+
+/* Badges */
 .badge {
-    font-size: 0.75rem;
-    padding: 5px 10px;
-    border-radius: 10px;
-    background: var(--spotify-border);
-    color: var(--spotify-text-secondary);
-}
-
-.badge.bg-secondary {
-    background: var(--spotify-border) !important;
-    color: var(--spotify-text-secondary);
+    border-radius: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
 }
 
 .badge.bg-success {
-    background: var(--spotify-green) !important;
-    color: var(--spotify-black);
+    background-color: var(--spotify-green) !important;
 }
 
-/* Icon styles */
-.fas, .fab {
-    margin-right: 5px;
+.badge.bg-secondary {
+    background-color: var(--text-muted) !important;
 }
 
-/* Footer styles */
-footer {
-    background: var(--spotify-dark-gray) !important;
-    border-top: 1px solid var(--spotify-border);
-    margin-top: auto;
-}
-
-/* Chart container */
-.chart-container {
-    background: var(--spotify-light-gray);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 10px 0;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--spotify-border);
-}
-
-/* Feature comparison table */
-.feature-table {
-    background: var(--spotify-light-gray);
+/* Progress Bars */
+.progress {
+    background-color: var(--spotify-light);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--spotify-border);
 }
 
-.feature-table th {
-    background: var(--spotify-dark-gray);
-    color: var(--spotify-text-primary);
+.progress-bar {
+    background-color: var(--spotify-green);
+    border-radius: 10px;
+}
+
+/* Alerts */
+.alert {
+    border-radius: 8px;
     border: none;
-    padding: 15px;
 }
 
-.feature-table td {
-    padding: 12px 15px;
-    border-bottom: 1px solid var(--spotify-border);
-    color: var(--spotify-text-primary);
+.alert-info {
+    background-color: rgba(13, 202, 240, 0.1);
+    color: #0dcaf0;
+    border-left: 4px solid #0dcaf0;
 }
 
-.feature-table tr:hover {
-    background: var(--spotify-dark-gray);
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border-left: 4px solid #dc3545;
 }
 
-/* Text colors */
-.text-muted {
-    color: var(--spotify-text-muted) !important;
+.alert-success {
+    background-color: rgba(29, 185, 84, 0.1);
+    color: var(--spotify-green);
+    border-left: 4px solid var(--spotify-green);
 }
 
-.text-primary {
-    color: var(--spotify-green) !important;
+/* Loading Spinner */
+.spinner-border {
+    color: var(--spotify-green);
 }
 
-/* Responsive design */
+/* Audio Features */
+.audio-features {
+    background-color: var(--spotify-light);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.feature-bar {
+    margin-bottom: 8px;
+}
+
+.feature-bar:last-child {
+    margin-bottom: 0;
+}
+
+/* Footer */
+footer {
+    background: linear-gradient(135deg, var(--spotify-dark) 0%, var(--spotify-light) 100%);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
-    .display-4 {
-        font-size: 2rem;
+    .album-cover {
+        width: 50px;
+        height: 50px;
     }
     
-    .track-card {
-        margin-bottom: 15px;
-        padding: 15px;
+    .card-body {
+        padding: 1rem;
     }
     
     .btn {
-        font-size: 0.9rem;
         padding: 8px 16px;
+        font-size: 0.9rem;
     }
 }
 
-/* Animation classes */
-.fade-in {
-    animation: fadeIn 0.5s ease-in;
-}
-
+/* Animations */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -419,57 +271,99 @@ footer {
     }
 }
 
-.slide-in {
-    animation: slideIn 0.3s ease-out;
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(-100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-/* Custom scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-    background: var(--spotify-dark-gray);
-    border-radius: 10px;
+    background: var(--spotify-light);
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--spotify-green);
-    border-radius: 10px;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--spotify-green-hover);
+    background: #1ed760;
 }
 
-/* Tooltip styles */
-.tooltip {
-    font-size: 0.8rem;
+/* Placeholder styling */
+::placeholder {
+    color: var(--text-muted) !important;
+    opacity: 1;
 }
 
-/* Spotify-like hover effects */
-.track-card:hover .btn {
-    transform: scale(1.05);
+/* Focus states for accessibility */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(29, 185, 84, 0.25);
 }
 
-/* Selection indicator */
-.track-card.selected {
-    box-shadow: 0 0 0 2px var(--spotify-green);
+/* Selection styling */
+::selection {
+    background-color: var(--spotify-green);
+    color: white;
 }
 
-/* Loading text */
-#loadingSpinner p {
-    color: var(--spotify-text-secondary);
-    font-weight: 500;
+/* Loading animation */
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.loading-pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Hover effects for interactive elements */
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Text utilities */
+.text-success {
+    color: var(--spotify-green) !important;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* Border utilities */
+.border-success {
+    border-color: var(--spotify-green) !important;
+}
+
+/* Background utilities */
+.bg-success {
+    background-color: var(--spotify-green) !important;
+}
+
+.bg-dark {
+    background-color: var(--spotify-dark) !important;
+}
+
+/* Shadow utilities */
+.shadow {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.shadow-lg {
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4) !important;
 } 

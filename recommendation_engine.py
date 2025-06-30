@@ -63,6 +63,158 @@ class RecommendationEngine:
         
         return df
     
+    def filter_duplicate_songs(self, tracks: List[Dict], target_track: Dict) -> List[Dict]:
+        """
+        Filter out tracks with the same title as the target track or other tracks.
+        
+        Args:
+            tracks: List of track dictionaries
+            target_track: The reference track
+            
+        Returns:
+            Filtered list without duplicate titles
+        """
+        if not tracks:
+            return []
+        
+        # Get target song title (normalized for comparison)
+        target_title = self._normalize_song_title(target_track.get('name', ''))
+        
+        # Track seen titles to avoid duplicates
+        seen_titles = {target_title}
+        filtered_tracks = []
+        
+        for track in tracks:
+            track_title = self._normalize_song_title(track.get('name', ''))
+            
+            # Skip if we've seen this title before
+            if track_title in seen_titles:
+                continue
+            
+            # Add to seen titles and filtered tracks
+            seen_titles.add(track_title)
+            filtered_tracks.append(track)
+        
+        return filtered_tracks
+    
+    def _normalize_song_title(self, title: str) -> str:
+        """
+        Normalize song title for comparison (remove common suffixes, lowercase, etc.).
+        
+        Args:
+            title: Original song title
+            
+        Returns:
+            Normalized title for comparison
+        """
+        if not title:
+            return ""
+        
+        # Convert to lowercase
+        normalized = title.lower().strip()
+        
+        # Remove common suffixes that indicate different versions
+        suffixes_to_remove = [
+            ' (remastered)',
+            ' (remaster)',
+            ' (live)',
+            ' (live version)',
+            ' (acoustic)',
+            ' (acoustic version)',
+            ' (radio edit)',
+            ' (single version)',
+            ' (album version)',
+            ' (original mix)',
+            ' (extended mix)',
+            ' (instrumental)',
+            ' (karaoke)',
+            ' (cover)',
+            ' (cover version)',
+            ' (feat.',
+            ' (ft.',
+            ' (featuring',
+            ' (explicit)',
+            ' (clean)',
+            ' (clean version)',
+            ' (explicit version)',
+            ' (deluxe)',
+            ' (deluxe edition)',
+            ' (bonus track)',
+            ' (demo)',
+            ' (demo version)',
+            ' (alternate)',
+            ' (alternate version)',
+            ' (unplugged)',
+            ' (unplugged version)',
+            ' (stripped)',
+            ' (stripped version)',
+            ' (piano version)',
+            ' (orchestral)',
+            ' (orchestral version)',
+            ' (strings version)',
+            ' (a cappella)',
+            ' (a cappella version)',
+            ' (reprise)',
+            ' (outro)',
+            ' (intro)',
+            ' (interlude)',
+            ' (skit)',
+            ' (spoken)',
+            ' (narrated)',
+            ' (monologue)',
+            ' (dialogue)',
+            ' (soundtrack)',
+            ' (movie version)',
+            ' (film version)',
+            ' (tv version)',
+            ' (commercial version)',
+            ' (promo)',
+            ' (promotional)',
+            ' (limited edition)',
+            ' (collector\'s edition)',
+            ' (anniversary edition)',
+            ' (japanese version)',
+            ' (international version)',
+            ' (european version)',
+            ' (american version)',
+            ' (uk version)',
+            ' (canadian version)',
+            ' (australian version)',
+            ' (german version)',
+            ' (french version)',
+            ' (spanish version)',
+            ' (italian version)',
+            ' (portuguese version)',
+            ' (russian version)',
+            ' (chinese version)',
+            ' (korean version)',
+            ' (japanese)',
+            ' (international)',
+            ' (european)',
+            ' (american)',
+            ' (uk)',
+            ' (canadian)',
+            ' (australian)',
+            ' (german)',
+            ' (french)',
+            ' (spanish)',
+            ' (italian)',
+            ' (portuguese)',
+            ' (russian)',
+            ' (chinese)',
+            ' (korean)'
+        ]
+        
+        for suffix in suffixes_to_remove:
+            if normalized.endswith(suffix):
+                normalized = normalized[:-len(suffix)]
+                break
+        
+        # Remove extra whitespace
+        normalized = ' '.join(normalized.split())
+        
+        return normalized
+    
     def calculate_similarity_matrix(self, df: pd.DataFrame, method: str = 'cosine') -> np.ndarray:
         """
         Calculate similarity matrix between all tracks.
@@ -92,7 +244,7 @@ class RecommendationEngine:
     def find_similar_tracks(self, 
                           target_track: Dict, 
                           candidate_tracks: List[Dict], 
-                          n_recommendations: int = 10,
+                          n_recommendations: int = 20,
                           similarity_method: str = 'cosine') -> List[Tuple[Dict, float]]:
         """
         Find similar tracks based on audio features.
@@ -100,17 +252,23 @@ class RecommendationEngine:
         Args:
             target_track: The reference track
             candidate_tracks: List of tracks to compare against
-            n_recommendations: Number of recommendations to return
+            n_recommendations: Number of recommendations to return (default 20)
             similarity_method: Method for calculating similarity
             
         Returns:
-            List of tuples (track, similarity_score)
+            List of tuples (track, similarity_score) sorted by similarity
         """
         if not candidate_tracks:
             return []
         
+        # Filter out duplicate song titles
+        filtered_tracks = self.filter_duplicate_songs(candidate_tracks, target_track)
+        
+        if not filtered_tracks:
+            return []
+        
         # Prepare data
-        all_tracks = [target_track] + candidate_tracks
+        all_tracks = [target_track] + filtered_tracks
         df = self.prepare_features(all_tracks)
         
         if df.empty:
@@ -126,9 +284,9 @@ class RecommendationEngine:
         similarities = similarity_matrix[0][1:]  # Exclude self-similarity
         
         # Create list of (track, similarity) tuples
-        track_similarities = list(zip(candidate_tracks, similarities))
+        track_similarities = list(zip(filtered_tracks, similarities))
         
-        # Sort by similarity (descending)
+        # Sort by similarity (descending) - highest similarity first
         track_similarities.sort(key=lambda x: x[1], reverse=True)
         
         return track_similarities[:n_recommendations]
@@ -145,19 +303,25 @@ class RecommendationEngine:
     def weighted_similarity(self, 
                           target_track: Dict, 
                           candidate_tracks: List[Dict], 
-                          n_recommendations: int = 10) -> List[Tuple[Dict, float]]:
+                          n_recommendations: int = 20) -> List[Tuple[Dict, float]]:
         """
         Find similar tracks using weighted feature importance.
         
         Args:
             target_track: The reference track
             candidate_tracks: List of tracks to compare against
-            n_recommendations: Number of recommendations to return
+            n_recommendations: Number of recommendations to return (default 20)
             
         Returns:
-            List of tuples (track, similarity_score)
+            List of tuples (track, similarity_score) sorted by similarity
         """
         if not candidate_tracks:
+            return []
+        
+        # Filter out duplicate song titles
+        filtered_tracks = self.filter_duplicate_songs(candidate_tracks, target_track)
+        
+        if not filtered_tracks:
             return []
         
         weights = self.get_feature_weights()
@@ -165,7 +329,7 @@ class RecommendationEngine:
         
         target_features = {k: target_track.get(k, 0) for k in self.numeric_features}
         
-        for track in candidate_tracks:
+        for track in filtered_tracks:
             track_features = {k: track.get(k, 0) for k in self.numeric_features}
             
             # Calculate weighted similarity
@@ -187,7 +351,7 @@ class RecommendationEngine:
             
             similarities.append((track, similarity))
         
-        # Sort by similarity (descending)
+        # Sort by similarity (descending) - highest similarity first
         similarities.sort(key=lambda x: x[1], reverse=True)
         
         return similarities[:n_recommendations]
@@ -195,25 +359,31 @@ class RecommendationEngine:
     def feature_based_filtering(self, 
                               target_track: Dict, 
                               candidate_tracks: List[Dict],
-                              n_recommendations: int = 10) -> List[Tuple[Dict, float]]:
+                              n_recommendations: int = 20) -> List[Tuple[Dict, float]]:
         """
         Advanced feature-based filtering that considers multiple aspects.
         
         Args:
             target_track: The reference track
             candidate_tracks: List of tracks to compare against
-            n_recommendations: Number of recommendations to return
+            n_recommendations: Number of recommendations to return (default 20)
             
         Returns:
-            List of tuples (track, similarity_score)
+            List of tuples (track, similarity_score) sorted by similarity
         """
         if not candidate_tracks:
+            return []
+        
+        # Filter out duplicate song titles
+        filtered_tracks = self.filter_duplicate_songs(candidate_tracks, target_track)
+        
+        if not filtered_tracks:
             return []
         
         similarities = []
         target_features = {k: target_track.get(k, 0) for k in self.numeric_features}
         
-        for track in candidate_tracks:
+        for track in filtered_tracks:
             track_features = {k: track.get(k, 0) for k in self.numeric_features}
             
             # Calculate multiple similarity scores
@@ -239,7 +409,7 @@ class RecommendationEngine:
             final_score = sum(scores)
             similarities.append((track, final_score))
         
-        # Sort by similarity (descending)
+        # Sort by similarity (descending) - highest similarity first
         similarities.sort(key=lambda x: x[1], reverse=True)
         
         return similarities[:n_recommendations]

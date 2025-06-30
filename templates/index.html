@@ -4,170 +4,165 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Recommendation Tool</title>
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <div class="container-fluid">
-        <!-- Header -->
-        <header class="bg-dark text-white py-4 mb-4">
-            <div class="container">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h1 class="display-4 mb-0">
-                            <i class="fas fa-music text-primary"></i>
-                            Music Recommendation Tool
-                        </h1>
-                        <p class="lead mb-0">Discover similar songs based on audio features</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <div class="badge bg-success fs-6">
-                            <i class="fas fa-check-circle"></i> Powered by Spotify API
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- Main Content -->
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <!-- Search Section -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-search"></i> Find Your Song
-                            </h5>
-                        </div>
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-music me-2"></i>
+                Music Recommendation Tool
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="#" id="searchLink">
+                    <i class="fas fa-search me-1"></i>Search
+                </a>
+                <a class="nav-link" href="#" id="recommendationsLink">
+                    <i class="fas fa-star me-1"></i>Recommendations
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        <!-- Alert Container -->
+        <div id="alertContainer" style="display: none;"></div>
+        
+        <!-- Loading Spinner -->
+        <div id="loading" style="display: none;"></div>
+
+        <!-- Search Section -->
+        <div id="searchSection">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
                         <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="input-group">
-                                        <input type="text" id="searchInput" class="form-control form-control-lg" 
-                                               placeholder="Enter song name, artist, or paste Spotify URL...">
-                                        <button class="btn btn-primary btn-lg" type="button" onclick="searchTracks()">
-                                            <i class="fas fa-search"></i> Search
-                                        </button>
-                                    </div>
+                            <h3 class="card-title text-center mb-4">
+                                <i class="fas fa-search text-success me-2"></i>
+                                Find Your Perfect Song
+                            </h3>
+                            
+                            <form id="searchForm">
+                                <div class="input-group mb-3">
+                                    <input type="text" 
+                                           class="form-control form-control-lg" 
+                                           id="searchInput" 
+                                           placeholder="Enter a song name, artist, or album..."
+                                           required>
+                                    <button class="btn btn-success btn-lg" type="submit">
+                                        <i class="fas fa-search me-2"></i>Search
+                                    </button>
                                 </div>
-                                <div class="col-md-4">
-                                    <select id="searchMethod" class="form-select form-select-lg">
-                                        <option value="feature_based">🎯 Feature-Based (Recommended)</option>
-                                        <option value="cosine">📊 Cosine Similarity</option>
-                                        <option value="euclidean">📏 Euclidean Distance</option>
-                                        <option value="weighted">⚖️ Weighted Features</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="row mt-3">
-                                <div class="col-12">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle"></i>
-                                        <strong>Feature-Based Method:</strong> Analyzes mood, style, tempo, and overall audio characteristics to find the most similar songs, regardless of genre or artist.
-                                    </div>
-                                </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Loading Spinner -->
-            <div id="loadingSpinner" class="text-center d-none">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Analyzing your music...</p>
             </div>
 
             <!-- Search Results -->
-            <div id="searchResults" class="row mb-4 d-none">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-list"></i> Search Results
-                            </h5>
-                        </div>
+            <div id="searchResults" class="mt-4"></div>
+        </div>
+
+        <!-- Recommendations Section -->
+        <div id="recommendationsSection" style="display: none;">
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Target Track -->
+                    <div id="targetTrack" class="mb-4"></div>
+
+                    <!-- Recommendation Form -->
+                    <div class="card mb-4">
                         <div class="card-body">
-                            <div id="tracksList" class="row"></div>
+                            <h5 class="card-title">
+                                <i class="fas fa-cog text-success me-2"></i>
+                                Recommendation Settings
+                            </h5>
+                            
+                            <form id="recommendForm">
+                                <input type="hidden" id="trackIdInput">
+                                
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <label for="methodSelect" class="form-label">Recommendation Method:</label>
+                                        <select class="form-select" id="methodSelect" required>
+                                            <option value="feature_based">Feature-Based (Recommended)</option>
+                                            <option value="cosine">Cosine Similarity</option>
+                                            <option value="euclidean">Euclidean Distance</option>
+                                            <option value="weighted">Weighted Similarity</option>
+                                        </select>
+                                        <div class="form-text" id="methodDescription">
+                                            Advanced analysis considering mood, style, tempo, and overall audio features with weighted importance.
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">&nbsp;</label>
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="fas fa-magic me-2"></i>Get Recommendations
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Target Track Info -->
-            <div id="targetTrackInfo" class="row mb-4 d-none">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header bg-info text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-star"></i> Selected Track
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="targetTrackDetails"></div>
-                        </div>
-                    </div>
+                    <!-- Recommendations List -->
+                    <div id="recommendationsList"></div>
                 </div>
-            </div>
 
-            <!-- Recommendations -->
-            <div id="recommendationsSection" class="row mb-4 d-none">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header bg-warning text-dark">
-                            <h5 class="mb-0">
-                                <i class="fas fa-lightbulb"></i> Similar Songs (Based on Audio Features)
-                            </h5>
-                        </div>
+                <div class="col-lg-4">
+                    <!-- Info Panel -->
+                    <div class="card">
                         <div class="card-body">
-                            <div id="recommendationsList" class="row"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Feature Analysis -->
-            <div id="featureAnalysis" class="row mb-4 d-none">
-                <div class="col-12">
-                    <div class="card shadow">
-                        <div class="card-header bg-secondary text-white">
-                            <h5 class="mb-0">
-                                <i class="fas fa-chart-bar"></i> Audio Feature Analysis
+                            <h5 class="card-title">
+                                <i class="fas fa-info-circle text-info me-2"></i>
+                                How It Works
                             </h5>
-                        </div>
-                        <div class="card-body">
-                            <div id="featureCharts"></div>
+                            <p class="card-text">
+                                Our recommendation engine analyzes audio features like:
+                            </p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-dot-circle text-success me-2"></i>Danceability</li>
+                                <li><i class="fas fa-dot-circle text-success me-2"></i>Energy & Mood</li>
+                                <li><i class="fas fa-dot-circle text-success me-2"></i>Acousticness</li>
+                                <li><i class="fas fa-dot-circle text-success me-2"></i>Instrumentalness</li>
+                                <li><i class="fas fa-dot-circle text-success me-2"></i>Tempo & Rhythm</li>
+                            </ul>
+                            <hr>
+                            <p class="card-text small text-muted">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                Duplicate songs are automatically filtered out, and results are sorted by similarity score.
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Footer -->
-        <footer class="bg-dark text-white py-4 mt-5">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Music Recommendation Tool</h6>
-                        <p class="small mb-0">Powered by Spotify API and Machine Learning</p>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <p class="small mb-0">
-                            <i class="fas fa-code"></i> Built with Python, Flask, and Bootstrap
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </footer>
     </div>
 
-    <!-- Scripts -->
+    <!-- Footer -->
+    <footer class="bg-dark text-light mt-5 py-4">
+        <div class="container text-center">
+            <p class="mb-0">
+                <i class="fas fa-music me-2"></i>
+                Powered by Spotify API & Machine Learning
+            </p>
+            <small class="text-muted">
+                Built with Flask, scikit-learn, and Bootstrap
+            </small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html> 

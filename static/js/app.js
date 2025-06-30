@@ -1,5 +1,4 @@
-// Music Recommendation Tool - Frontend JavaScript
-
+// Music Recommendation App JavaScript
 class MusicRecommendationApp {
     constructor() {
         this.currentTrack = null;
@@ -9,377 +8,529 @@ class MusicRecommendationApp {
 
     init() {
         this.setupEventListeners();
-        this.showWelcomeMessage();
+        this.showSearchSection();
+        this.loadRecommendationMethods();
     }
 
     setupEventListeners() {
-        // Search input enter key
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.searchTracks();
-            }
-        });
+        // Search form
+        const searchForm = document.getElementById('searchForm');
+        if (searchForm) {
+            searchForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleSearch();
+            });
+        }
 
-        // Search method change
-        document.getElementById('searchMethod').addEventListener('change', () => {
-            if (this.currentTrack) {
-                this.getRecommendations();
-            }
-        });
+        // Recommendation form
+        const recommendForm = document.getElementById('recommendForm');
+        if (recommendForm) {
+            recommendForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleRecommendation();
+            });
+        }
+
+        // Method selection
+        const methodSelect = document.getElementById('methodSelect');
+        if (methodSelect) {
+            methodSelect.addEventListener('change', () => {
+                this.updateMethodDescription();
+            });
+        }
+
+        // Navigation
+        const searchLink = document.getElementById('searchLink');
+        if (searchLink) {
+            searchLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showSearchSection();
+            });
+        }
+
+        const recommendationsLink = document.getElementById('recommendationsLink');
+        if (recommendationsLink) {
+            recommendationsLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showRecommendationsSection();
+            });
+        }
     }
 
-    showWelcomeMessage() {
+    async handleSearch() {
         const searchInput = document.getElementById('searchInput');
-        searchInput.placeholder = "Try: 'Bohemian Rhapsody Queen' or paste a Spotify URL...";
-    }
+        const query = searchInput.value.trim();
 
-    async searchTracks() {
-        const query = document.getElementById('searchInput').value.trim();
-        
         if (!query) {
-            this.showAlert('Please enter a song name, artist, or Spotify URL', 'warning');
+            this.showError('Please enter a song name to search for.');
             return;
         }
 
-        this.showLoading(true);
-        this.hideAllSections();
-
+        this.showLoading('Searching for songs...');
+        
         try {
             const response = await fetch('/search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ query: query })
+                body: JSON.stringify({ query })
             });
 
             const data = await response.json();
 
-            if (response.ok) {
-                this.displaySearchResults(data.tracks);
-                this.showSection('searchResults');
-            } else {
-                this.showAlert(data.error || 'Search failed', 'danger');
+            if (!response.ok) {
+                throw new Error(data.error || 'Search failed');
             }
+
+            // Display all filtered results
+            this.displaySearchResults(data.songs);
+            this.lastSearchQuery = query; // Save for recommendations
+            
         } catch (error) {
             console.error('Search error:', error);
-            this.showAlert('Network error. Please try again.', 'danger');
+            this.showError(error.message || 'An error occurred while searching.');
         } finally {
-            this.showLoading(false);
+            this.hideLoading();
         }
     }
 
-    displaySearchResults(tracks) {
-        const tracksList = document.getElementById('tracksList');
-        tracksList.innerHTML = '';
+    displaySearchResults(songs) {
+        const resultsContainer = document.getElementById('searchResults');
+        if (!resultsContainer) return;
 
-        tracks.forEach((track, index) => {
-            const trackCard = this.createTrackCard(track, 'search');
-            tracksList.appendChild(trackCard);
-        });
-    }
-
-    createTrackCard(track, type = 'search') {
-        const col = document.createElement('div');
-        col.className = 'col-md-6 col-lg-4 mb-3';
-        
-        const cardClass = type === 'search' ? 'track-card' : 'track-card recommendation';
-        
-        col.innerHTML = `
-            <div class="${cardClass} fade-in" data-track-id="${track.id}">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <h6 class="mb-1 fw-bold">${this.escapeHtml(track.name)}</h6>
-                    <span class="badge bg-secondary">${track.popularity || 0}%</span>
-                </div>
-                <p class="text-muted mb-2">
-                    <i class="fas fa-user"></i> ${this.escapeHtml(track.artist)}
-                </p>
-                <p class="text-muted small mb-3">
-                    <i class="fas fa-compact-disc"></i> ${this.escapeHtml(track.album)}
-                </p>
-                
-                ${track.preview_url ? `
-                    <audio controls class="audio-player mb-3">
-                        <source src="${track.preview_url}" type="audio/mpeg">
-                        Your browser does not support the audio element.
-                    </audio>
-                ` : ''}
-                
-                <div class="d-flex gap-2">
-                    ${type === 'search' ? `
-                        <button class="btn btn-primary btn-sm" onclick="app.selectTrack('${track.id}')">
-                            <i class="fas fa-star"></i> Select
-                        </button>
-                    ` : `
-                        <span class="similarity-badge ${this.getSimilarityClass(track.similarity_score)}">
-                            ${track.similarity_percentage || 'N/A'}
-                        </span>
-                    `}
-                    
-                    <a href="${track.external_url}" target="_blank" class="btn btn-outline-secondary btn-sm">
-                        <i class="fab fa-spotify"></i> Open
-                    </a>
-                </div>
-                
-                ${type === 'recommendation' && track.reasoning ? `
-                    <div class="mt-2">
-                        <small class="text-muted">
-                            <i class="fas fa-lightbulb"></i> 
-                            ${track.reasoning.slice(0, 2).join(', ')}
-                        </small>
-                    </div>
-                ` : ''}
-            </div>
-        `;
-
-        return col;
-    }
-
-    async selectTrack(trackId) {
-        this.showLoading(true);
-        
-        try {
-            const response = await fetch(`/track/${trackId}`);
-            const track = await response.json();
-            
-            if (response.ok) {
-                this.currentTrack = track;
-                this.displayTargetTrack(track);
-                this.showSection('targetTrackInfo');
-                await this.getRecommendations();
-            } else {
-                this.showAlert('Failed to get track details', 'danger');
-            }
-        } catch (error) {
-            console.error('Error selecting track:', error);
-            this.showAlert('Network error. Please try again.', 'danger');
-        } finally {
-            this.showLoading(false);
+        if (!songs || songs.length === 0) {
+            resultsContainer.innerHTML = '<p class="text-muted">No songs found. Try a different search term.</p>';
+            return;
         }
-    }
 
-    displayTargetTrack(track) {
-        const targetDetails = document.getElementById('targetTrackDetails');
-        
-        targetDetails.innerHTML = `
-            <div class="row">
-                <div class="col-md-8">
-                    <h4 class="mb-3">
-                        <i class="fas fa-music"></i> ${this.escapeHtml(track.name)}
-                    </h4>
-                    <p class="lead mb-2">
-                        <i class="fas fa-user"></i> ${this.escapeHtml(track.artist)}
-                    </p>
-                    <p class="text-muted mb-3">
-                        <i class="fas fa-compact-disc"></i> ${this.escapeHtml(track.album)}
-                    </p>
-                    
-                    ${track.preview_url ? `
-                        <audio controls class="audio-player mb-3">
-                            <source src="${track.preview_url}" type="audio/mpeg">
-                            Your browser does not support the audio element.
-                        </audio>
-                    ` : ''}
-                    
-                    <a href="${track.external_url}" target="_blank" class="btn btn-success">
-                        <i class="fab fa-spotify"></i> Open in Spotify
-                    </a>
-                </div>
-                <div class="col-md-4">
-                    <div class="text-center">
-                        <div class="display-4 text-primary mb-2">${track.popularity}%</div>
-                        <div class="text-muted">Popularity</div>
+        const songsHTML = songs.map((song, index) => `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 song-card" data-track-id="${song.id}">
+                    <div class="card-body d-flex">
+                        <div class="flex-shrink-0 me-3">
+                            <img src="${song.image_url || '/static/images/default-album.png'}" 
+                                 alt="${song.name}" 
+                                 class="album-cover" 
+                                 onerror="this.src='/static/images/default-album.png'">
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">${this.escapeHtml(song.name)}</h6>
+                            <p class="card-text text-muted mb-2">${this.escapeHtml(song.artist)}</p>
+                            <p class="card-text small text-muted mb-2">${this.escapeHtml(song.album)}</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-secondary">#${index + 1}</span>
+                            </div>
+                            <button class="btn btn-success btn-sm w-100" onclick="app.selectTrack('${song.id}')">
+                                <i class="fas fa-music me-1"></i>Get Recommendations
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <hr class="my-4">
-            
-            <h5 class="mb-3">
-                <i class="fas fa-chart-bar"></i> Audio Features
-            </h5>
+        `).join('');
+
+        resultsContainer.innerHTML = `
+            <div class="mb-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Filtered Results:</strong> Showing ${songs.length} songs that don't contain "${this.lastSearchQuery}" in their name.
+                </div>
+            </div>
             <div class="row">
-                ${this.createFeatureBars(track.features)}
+                ${songsHTML}
             </div>
         `;
     }
 
-    createFeatureBars(features) {
-        const featureNames = {
-            'danceability': 'Danceability',
-            'energy': 'Energy',
-            'valence': 'Valence',
-            'acousticness': 'Acousticness',
-            'instrumentalness': 'Instrumentalness',
-            'liveness': 'Liveness',
-            'speechiness': 'Speechiness'
-        };
-
-        return Object.entries(featureNames).map(([key, name]) => {
-            const feature = features[key];
-            const percentage = Math.round(feature.value * 100);
-            const level = percentage > 66 ? 'high' : percentage > 33 ? 'medium' : 'low';
+    selectTrack(trackId) {
+        // Find the selected track in search results
+        const trackCard = document.querySelector(`[data-track-id="${trackId}"]`);
+        if (trackCard) {
+            // Remove previous selection
+            document.querySelectorAll('.song-card').forEach(card => {
+                card.classList.remove('selected');
+            });
             
-            return `
-                <div class="col-md-6 col-lg-4 mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <small class="fw-bold">${name}</small>
-                        <small class="text-muted">${percentage}%</small>
-                    </div>
-                    <div class="feature-bar">
-                        <div class="feature-fill ${level}" style="width: ${percentage}%"></div>
-                    </div>
-                    <small class="text-muted">${feature.description}</small>
-                </div>
-            `;
-        }).join('');
+            // Add selection to current card
+            trackCard.classList.add('selected');
+        }
+
+        this.currentTrack = trackId;
+        this.showRecommendationsSection();
+        
+        // Update the hidden input
+        const trackIdInput = document.getElementById('trackIdInput');
+        if (trackIdInput) {
+            trackIdInput.value = trackId;
+        }
     }
 
-    async getRecommendations() {
-        if (!this.currentTrack) return;
+    async handleRecommendation() {
+        if (!this.currentTrack) {
+            this.showError('Please select a track first.');
+            return;
+        }
 
-        this.showLoading(true);
+        const methodSelect = document.getElementById('methodSelect');
+        const method = methodSelect ? methodSelect.value : 'feature_based';
+
+        this.showLoading('Finding similar songs...');
         
         try {
-            const method = document.getElementById('searchMethod').value;
-            
-            const response = await fetch('/recommendations', {
+            const response = await fetch('/recommend', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    track_id: this.currentTrack.id,
+                body: JSON.stringify({ 
+                    track_id: this.currentTrack,
                     method: method,
-                    limit: 15
+                    input_track_name: this.lastSearchQuery || '' // Pass original search query
                 })
             });
 
             const data = await response.json();
-            
-            if (response.ok) {
-                this.recommendations = data.recommendations;
-                this.displayRecommendations(data.recommendations);
-                this.showSection('recommendationsSection');
-                this.createFeatureComparisonChart(data.target_track, data.recommendations);
-            } else {
-                this.showAlert(data.error || 'Failed to get recommendations', 'danger');
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to get recommendations');
             }
+
+            this.displayRecommendations(data);
+            
         } catch (error) {
-            console.error('Error getting recommendations:', error);
-            this.showAlert('Network error. Please try again.', 'danger');
+            console.error('Recommendation error:', error);
+            this.showError(error.message || 'An error occurred while getting recommendations.');
         } finally {
-            this.showLoading(false);
+            this.hideLoading();
         }
     }
 
-    displayRecommendations(recommendations) {
-        const recommendationsList = document.getElementById('recommendationsList');
-        recommendationsList.innerHTML = '';
-
-        recommendations.forEach((track, index) => {
-            const trackCard = this.createTrackCard(track, 'recommendation');
-            trackCard.querySelector('.track-card').classList.add('slide-in');
-            recommendationsList.appendChild(trackCard);
-        });
+    displayRecommendations(data) {
+        const { target_track, recommendations, method_used, total_candidates } = data;
+        
+        this.recommendations = recommendations;
+        
+        // Display target track
+        this.displayTargetTrack(target_track);
+        
+        // Display recommendations
+        this.displayRecommendationsList(recommendations, method_used, total_candidates);
+        
+        // Show recommendations section
+        this.showRecommendationsSection();
     }
 
-    createFeatureComparisonChart(targetTrack, recommendations) {
-        const featureCharts = document.getElementById('featureCharts');
-        featureCharts.innerHTML = '';
+    displayTargetTrack(targetTrack) {
+        const targetContainer = document.getElementById('targetTrack');
+        if (!targetContainer) return;
 
-        // Create radar chart for feature comparison
-        const features = ['danceability', 'energy', 'valence', 'acousticness', 'instrumentalness', 'liveness', 'speechiness'];
-        const featureLabels = ['Danceability', 'Energy', 'Valence', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'];
+        targetContainer.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Based on:</h5>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <img src="${targetTrack.image_url || '/static/images/default-album.png'}" 
+                                 alt="${targetTrack.name}" 
+                                 class="album-cover" 
+                                 onerror="this.src='/static/images/default-album.png'">
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${this.escapeHtml(targetTrack.name)}</h6>
+                            <p class="text-muted mb-1">${this.escapeHtml(targetTrack.artist)}</p>
+                            <p class="text-muted small mb-0">${this.escapeHtml(targetTrack.album)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
-        const targetValues = features.map(f => targetTrack.features[f].value);
-        const avgValues = features.map(f => {
-            const values = recommendations.map(r => r[f] || 0);
-            return values.reduce((a, b) => a + b, 0) / values.length;
-        });
+    displayRecommendationsList(recommendations, methodUsed, totalCandidates) {
+        const recommendationsContainer = document.getElementById('recommendationsList');
+        if (!recommendationsContainer) return;
 
-        const data = [
-            {
-                type: 'scatterpolar',
-                r: targetValues,
-                theta: featureLabels,
-                fill: 'toself',
-                name: 'Selected Track',
-                line: { color: '#007bff' },
-                fillcolor: 'rgba(0, 123, 255, 0.1)'
-            },
-            {
-                type: 'scatterpolar',
-                r: avgValues,
-                theta: featureLabels,
-                fill: 'toself',
-                name: 'Average of Recommendations',
-                line: { color: '#28a745' },
-                fillcolor: 'rgba(40, 167, 69, 0.1)'
-            }
-        ];
+        if (!recommendations || recommendations.length === 0) {
+            recommendationsContainer.innerHTML = '<p class="text-muted">No recommendations found.</p>';
+            return;
+        }
 
-        const layout = {
-            polar: {
-                radialaxis: {
-                    visible: true,
-                    range: [0, 1]
-                }
-            },
-            showlegend: true,
-            title: 'Audio Feature Comparison',
-            height: 500
+        // Create method info
+        const methodInfo = this.getMethodInfo(methodUsed);
+        
+        const recommendationsHTML = recommendations.map((track, index) => `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100 recommendation-card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start">
+                            <div class="flex-shrink-0 me-3">
+                                <img src="${track.image_url || '/static/images/default-album.png'}" 
+                                     alt="${track.name}" 
+                                     class="album-cover" 
+                                     onerror="this.src='/static/images/default-album.png'">
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="card-title mb-1">${this.escapeHtml(track.name)}</h6>
+                                <p class="card-text text-muted mb-1">${this.escapeHtml(track.artist)}</p>
+                                <p class="card-text small text-muted mb-2">${this.escapeHtml(track.album)}</p>
+                                
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-success">Similarity: ${track.similarity_score}%</span>
+                                    <span class="badge bg-secondary">#${index + 1}</span>
+                                </div>
+                                
+                                <div class="btn-group btn-group-sm w-100" role="group">
+                                    ${track.preview_url ? 
+                                        `<button class="btn btn-outline-primary" onclick="app.playPreview('${track.preview_url}')">
+                                            <i class="fas fa-play"></i> Preview
+                                        </button>` : 
+                                        '<button class="btn btn-outline-secondary" disabled>No Preview</button>'
+                                    }
+                                    ${track.external_url ? 
+                                        `<a href="${track.external_url}" target="_blank" class="btn btn-outline-success">
+                                            <i class="fab fa-spotify"></i> Open
+                                        </a>` : 
+                                        '<button class="btn btn-outline-secondary" disabled>No Link</button>'
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Audio Features Visualization -->
+                        <div class="mt-3">
+                            <small class="text-muted">Audio Features:</small>
+                            <div class="audio-features mt-1">
+                                ${this.createAudioFeaturesBars(track.audio_features)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        recommendationsContainer.innerHTML = `
+            <div class="mb-3">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>${methodInfo.name}</strong>: ${methodInfo.description}
+                    <br>
+                    <small class="text-muted">
+                        Found ${recommendations.length} recommendations from ${totalCandidates} candidates 
+                        (duplicates filtered out, sorted by similarity)
+                    </small>
+                </div>
+            </div>
+            <div class="row">
+                ${recommendationsHTML}
+            </div>
+        `;
+    }
+
+    createAudioFeaturesBars(features) {
+        const featureNames = {
+            'danceability': 'Dance',
+            'energy': 'Energy',
+            'valence': 'Mood',
+            'acousticness': 'Acoustic',
+            'instrumentalness': 'Instrumental',
+            'liveness': 'Live',
+            'speechiness': 'Speech'
         };
 
-        Plotly.newPlot(featureCharts, data, layout, {responsive: true});
-
-        this.showSection('featureAnalysis');
+        return Object.entries(features).map(([key, value]) => {
+            if (key in featureNames) {
+                const percentage = Math.round(value * 100);
+                return `
+                    <div class="feature-bar mb-1">
+                        <div class="d-flex justify-content-between">
+                            <small>${featureNames[key]}</small>
+                            <small>${percentage}%</small>
+                        </div>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-success" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+            return '';
+        }).join('');
     }
 
-    getSimilarityClass(score) {
-        if (score >= 0.9) return 'similarity-excellent';
-        if (score >= 0.8) return 'similarity-good';
-        if (score >= 0.7) return 'similarity-moderate';
-        return 'similarity-weak';
+    getMethodInfo(method) {
+        const methods = {
+            'feature_based': {
+                name: 'Feature-Based Filtering',
+                description: 'Advanced analysis considering mood, style, tempo, and overall audio features with weighted importance.'
+            },
+            'cosine': {
+                name: 'Cosine Similarity',
+                description: 'Measures similarity based on the cosine of the angle between audio feature vectors.'
+            },
+            'euclidean': {
+                name: 'Euclidean Distance',
+                description: 'Measures similarity based on the straight-line distance between audio feature points.'
+            },
+            'weighted': {
+                name: 'Weighted Similarity',
+                description: 'Uses feature importance weights to prioritize certain audio characteristics.'
+            }
+        };
+        
+        return methods[method] || methods['feature_based'];
     }
 
-    showLoading(show) {
-        const spinner = document.getElementById('loadingSpinner');
-        if (show) {
-            spinner.classList.remove('d-none');
-        } else {
-            spinner.classList.add('d-none');
+    loadRecommendationMethods() {
+        const methodSelect = document.getElementById('methodSelect');
+        if (!methodSelect) return;
+
+        const methods = [
+            { value: 'feature_based', label: 'Feature-Based (Recommended)' },
+            { value: 'cosine', label: 'Cosine Similarity' },
+            { value: 'euclidean', label: 'Euclidean Distance' },
+            { value: 'weighted', label: 'Weighted Similarity' }
+        ];
+
+        methodSelect.innerHTML = methods.map(method => 
+            `<option value="${method.value}">${method.label}</option>`
+        ).join('');
+
+        this.updateMethodDescription();
+    }
+
+    updateMethodDescription() {
+        const methodSelect = document.getElementById('methodSelect');
+        const methodDescription = document.getElementById('methodDescription');
+        
+        if (!methodSelect || !methodDescription) return;
+
+        const method = methodSelect.value;
+        const methodInfo = this.getMethodInfo(method);
+        
+        methodDescription.textContent = methodInfo.description;
+    }
+
+    playPreview(previewUrl) {
+        // Stop any currently playing audio
+        const currentAudio = document.querySelector('audio');
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.remove();
         }
+
+        // Create and play new audio
+        const audio = new Audio(previewUrl);
+        audio.volume = 0.5;
+        audio.play().catch(error => {
+            console.error('Error playing preview:', error);
+            this.showError('Could not play audio preview.');
+        });
+
+        // Remove audio element when finished
+        audio.addEventListener('ended', () => {
+            audio.remove();
+        });
+    }
+
+    showSearchSection() {
+        this.hideAllSections();
+        const searchSection = document.getElementById('searchSection');
+        if (searchSection) {
+            searchSection.style.display = 'block';
+        }
+        this.updateNavigation('search');
+    }
+
+    showRecommendationsSection() {
+        this.hideAllSections();
+        const recommendationsSection = document.getElementById('recommendationsSection');
+        if (recommendationsSection) {
+            recommendationsSection.style.display = 'block';
+        }
+        this.updateNavigation('recommendations');
     }
 
     hideAllSections() {
-        const sections = ['searchResults', 'targetTrackInfo', 'recommendationsSection', 'featureAnalysis'];
-        sections.forEach(section => {
-            document.getElementById(section).classList.add('d-none');
+        const sections = ['searchSection', 'recommendationsSection'];
+        sections.forEach(sectionId => {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                section.style.display = 'none';
+            }
         });
     }
 
-    showSection(sectionId) {
-        document.getElementById(sectionId).classList.remove('d-none');
+    updateNavigation(activeSection) {
+        // Update navigation links
+        const searchLink = document.getElementById('searchLink');
+        const recommendationsLink = document.getElementById('recommendationsLink');
+        
+        if (searchLink) {
+            searchLink.classList.toggle('active', activeSection === 'search');
+        }
+        if (recommendationsLink) {
+            recommendationsLink.classList.toggle('active', activeSection === 'recommendations');
+        }
     }
 
-    showAlert(message, type = 'info') {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        const container = document.querySelector('.container');
-        container.insertBefore(alertDiv, container.firstChild);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
+    showLoading(message = 'Loading...') {
+        const loadingDiv = document.getElementById('loading');
+        if (loadingDiv) {
+            loadingDiv.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-success" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">${message}</p>
+                </div>
+            `;
+            loadingDiv.style.display = 'block';
+        }
+    }
+
+    hideLoading() {
+        const loadingDiv = document.getElementById('loading');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
+    }
+
+    showError(message) {
+        const alertContainer = document.getElementById('alertContainer');
+        if (alertContainer) {
+            alertContainer.innerHTML = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${this.escapeHtml(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            alertContainer.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alertContainer.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    showSuccess(message) {
+        const alertContainer = document.getElementById('alertContainer');
+        if (alertContainer) {
+            alertContainer.innerHTML = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${this.escapeHtml(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            alertContainer.style.display = 'block';
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                alertContainer.style.display = 'none';
+            }, 3000);
+        }
     }
 
     escapeHtml(text) {
@@ -389,22 +540,7 @@ class MusicRecommendationApp {
     }
 }
 
-// Initialize the app when the page loads
-let app;
+// Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    app = new MusicRecommendationApp();
-});
-
-// Global function for track selection (called from HTML)
-function selectTrack(trackId) {
-    if (app) {
-        app.selectTrack(trackId);
-    }
-}
-
-// Global function for search (called from HTML)
-function searchTracks() {
-    if (app) {
-        app.searchTracks();
-    }
-} 
+    window.app = new MusicRecommendationApp();
+}); 

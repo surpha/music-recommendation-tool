@@ -42,12 +42,12 @@ class SpotifyClient:
                 track_info = {
                     'id': track['id'],
                     'name': track['name'],
-                    'artist': track['artists'][0]['name'],
-                    'album': track['album']['name'],
+                    'artists': track['artists'],
+                    'album': track['album'],
                     'release_date': track['album']['release_date'],
                     'popularity': track['popularity'],
                     'duration_ms': track['duration_ms'],
-                    'external_url': track['external_urls']['spotify'],
+                    'external_urls': track['external_urls'],
                     'preview_url': track['preview_url']
                 }
                 tracks.append(track_info)
@@ -56,6 +56,40 @@ class SpotifyClient:
         except Exception as e:
             print(f"Error searching tracks: {e}")
             return []
+    
+    def get_track(self, track_id: str) -> Optional[Dict]:
+        """
+        Get track information by ID.
+        
+        Args:
+            track_id: Spotify track ID
+            
+        Returns:
+            Track information dictionary
+        """
+        try:
+            track = self.sp.track(track_id)
+            return track
+        except Exception as e:
+            print(f"Error getting track: {e}")
+            return None
+    
+    def get_audio_features(self, track_id: str) -> Optional[Dict]:
+        """
+        Get audio features for a specific track.
+        
+        Args:
+            track_id: Spotify track ID
+            
+        Returns:
+            Dictionary containing audio features
+        """
+        try:
+            features = self.sp.audio_features(track_id)[0]
+            return features
+        except Exception as e:
+            print(f"Error getting audio features: {e}")
+            return None
     
     def get_track_features(self, track_id: str) -> Optional[Dict]:
         """
@@ -85,12 +119,12 @@ class SpotifyClient:
             print(f"Error getting track features: {e}")
             return None
     
-    def get_recommendations(self, track_id: str, limit: int = 20) -> List[Dict]:
+    def get_recommendations(self, seed_tracks: List[str], limit: int = 20) -> List[Dict]:
         """
-        Get Spotify's recommended tracks based on a seed track.
+        Get Spotify's recommended tracks based on seed tracks.
         
         Args:
-            track_id: Seed track ID
+            seed_tracks: List of seed track IDs
             limit: Number of recommendations to return
             
         Returns:
@@ -98,7 +132,7 @@ class SpotifyClient:
         """
         try:
             recommendations = self.sp.recommendations(
-                seed_tracks=[track_id],
+                seed_tracks=seed_tracks,
                 limit=limit
             )
             
@@ -107,10 +141,10 @@ class SpotifyClient:
                 track_info = {
                     'id': track['id'],
                     'name': track['name'],
-                    'artist': track['artists'][0]['name'],
-                    'album': track['album']['name'],
+                    'artists': track['artists'],
+                    'album': track['album'],
                     'popularity': track['popularity'],
-                    'external_url': track['external_urls']['spotify'],
+                    'external_urls': track['external_urls'],
                     'preview_url': track['preview_url']
                 }
                 recommended_tracks.append(track_info)
